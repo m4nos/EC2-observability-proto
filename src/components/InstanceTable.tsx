@@ -7,7 +7,7 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 type ApiResponse = { instances: InstanceRow[] };
 
 export default function InstanceTable() {
-  const { data } = useSWR<ApiResponse>("/api/ec2/instances", fetcher, {
+  const { data } = useSWR<ApiResponse>("/api/ec2/instances-mock", fetcher, {
     refreshInterval: 60_000,
   });
   const rows = data?.instances || [];
