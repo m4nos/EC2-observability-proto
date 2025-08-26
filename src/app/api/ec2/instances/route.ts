@@ -114,14 +114,17 @@ export async function GET(req: NextRequest) {
     }
 
     return Response.json({ instances: results });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("EC2 instances API error:", error);
     return Response.json(
       {
-        error: error.name || "Unknown error",
-        message: error.message || "Failed to fetch EC2 instances",
+        error: error instanceof Error ? error.name : "Unknown error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch EC2 instances",
         details:
-          error.name === "AccessDeniedException"
+          error instanceof Error && error.name === "AccessDeniedException"
             ? "Missing EC2/CloudWatch permissions. See README for required IAM policy."
             : undefined,
       },

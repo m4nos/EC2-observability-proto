@@ -1,6 +1,9 @@
 "use client";
+
 import useSWR from "swr";
 import { InstanceRow } from "@/types/api";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import { Box, Chip, Typography } from "@mui/material";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -12,95 +15,102 @@ export default function InstanceTable() {
   });
   const rows = data?.instances || [];
 
+  const columns: GridColDef[] = [
+    {
+      field: "instance",
+      headerName: "Instance",
+      width: 200,
+      sortable: false,
+      renderCell: (params) => (
+        <Box>
+          <Typography sx={{ fontWeight: 600 }}>{params.row.name}</Typography>
+          <Typography sx={{ fontSize: 10, opacity: 0.7 }}>
+            {params.row.instanceId}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      field: "region",
+      headerName: "Region",
+      width: 120,
+      filterable: true,
+    },
+    {
+      field: "instanceType",
+      headerName: "Type",
+      width: 120,
+      filterable: true,
+    },
+    {
+      field: "state",
+      headerName: "State",
+      width: 100,
+      filterable: true,
+    },
+    {
+      field: "cpuUtilizationAvg24h",
+      headerName: "CPU avg (24h)",
+      width: 130,
+      type: "number",
+      renderCell: (params) => {
+        const value = params.row.cpuUtilizationAvg24h;
+        if (value == null) return "—";
+        return `${value.toFixed(1)}%`;
+      },
+    },
+    {
+      field: "cpuUtilizationMax24h",
+      headerName: "CPU max (24h)",
+      width: 130,
+      type: "number",
+      renderCell: (params) => {
+        const value = params.row.cpuUtilizationMax24h;
+        if (value == null) return "—";
+        return `${value.toFixed(1)}%`;
+      },
+    },
+    {
+      field: "costPerHourUsd",
+      headerName: "$/hr",
+      width: 100,
+      type: "number",
+      renderCell: (params) => {
+        const value = params.row.costPerHourUsd;
+        if (value == null) return "—";
+        return `$${value.toFixed(3)}`;
+      },
+    },
+    {
+      field: "wasteIndicators",
+      headerName: "Waste",
+      width: 400,
+      sortable: false,
+      renderCell: (params) => (
+        <WastePills indicators={params.row.wasteIndicators} />
+      ),
+    },
+  ];
+
   return (
-    <div style={{ display: "grid", gap: 8 }}>
-      <div style={{ display: "flex", gap: 8 }}>
-        <input
-          placeholder="Filter by region"
-          style={{
-            padding: 8,
-            borderRadius: 6,
-            background: "#111",
-            border: "1px solid #222",
-          }}
-        />
-        <input
-          placeholder="Filter by type"
-          style={{
-            padding: 8,
-            borderRadius: 6,
-            background: "#111",
-            border: "1px solid #222",
-          }}
-        />
-      </div>
-      <div
-        style={{ overflow: "auto", border: "1px solid #222", borderRadius: 8 }}
-      >
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ textAlign: "left", background: "#0f0f0f" }}>
-              {[
-                "Instance",
-                "Region",
-                "Type",
-                "State",
-                "CPU avg (24h)",
-                "CPU max (24h)",
-                "$/hr",
-                "Waste",
-              ].map((h) => (
-                <th
-                  key={h}
-                  style={{
-                    padding: 8,
-                    borderBottom: "1px solid #222",
-                    position: "sticky",
-                    top: 0,
-                  }}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr
-                key={r.instanceId}
-                style={{ borderBottom: "1px solid #1a1a1a" }}
-              >
-                <td style={{ padding: 8 }}>
-                  <div style={{ fontWeight: 600 }}>
-                    {r.name || r.instanceId}
-                  </div>
-                  <div style={{ fontSize: 12, opacity: 0.7 }}>
-                    {r.instanceId}
-                  </div>
-                </td>
-                <td style={{ padding: 8 }}>{r.region}</td>
-                <td style={{ padding: 8 }}>{r.instanceType}</td>
-                <td style={{ padding: 8 }}>{r.state}</td>
-                <td style={{ padding: 8 }}>
-                  {formatPct(r.cpuUtilizationAvg24h)}
-                </td>
-                <td style={{ padding: 8 }}>
-                  {formatPct(r.cpuUtilizationMax24h)}
-                </td>
-                <td style={{ padding: 8 }}>
-                  {r.costPerHourUsd == null
-                    ? "—"
-                    : `$${r.costPerHourUsd.toFixed(3)}`}
-                </td>
-                <td style={{ padding: 8 }}>
-                  <WastePills indicators={r.wasteIndicators} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <Box sx={{ width: "100%" }}>
+      <DataGrid
+        rows={rows}
+        columns={columns}
+        getRowId={(row) => row.instanceId}
+        initialState={{
+          pagination: {
+            paginationModel: { page: 0, pageSize: 10 },
+          },
+          sorting: {
+            sortModel: [{ field: "instance", sort: "asc" }],
+          },
+        }}
+        pageSizeOptions={[5, 10, 25]}
+        disableRowSelectionOnClick
+        disableColumnResize
+      />
+    </Box>
   );
 }
 
@@ -110,33 +120,27 @@ function WastePills({
   indicators: InstanceRow["wasteIndicators"];
 }) {
   if (!indicators || indicators.length === 0)
-    return <span style={{ opacity: 0.5 }}>None</span>;
-  return (
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-      {indicators.map((i, idx) => (
-        <span
-          key={idx}
-          style={{
-            fontSize: 12,
-            padding: "2px 6px",
-            borderRadius: 999,
-            background:
-              i.severity === "high"
-                ? "#7f1d1d"
-                : i.severity === "medium"
-                ? "#78350f"
-                : "#1f2937",
-            border: "1px solid #222",
-          }}
-        >
-          {i.reason}
-        </span>
-      ))}
-    </div>
-  );
-}
+    return <Chip label="None" size="small" sx={{ opacity: 0.5 }} />;
 
-function formatPct(n?: number | null) {
-  if (n == null) return "—";
-  return `${n.toFixed(1)}%`;
+  return indicators.map((i, idx) => (
+    <Chip
+      key={idx}
+      label={i.reason}
+      size="small"
+      sx={{
+        fontSize: 12,
+        backgroundColor:
+          i.severity === "high"
+            ? "#7f1d1d"
+            : i.severity === "medium"
+            ? "#78350f"
+            : "#1f2937",
+        color: "white",
+        border: "1px solid #222",
+        "& .MuiChip-label": {
+          px: 1,
+        },
+      }}
+    />
+  ));
 }

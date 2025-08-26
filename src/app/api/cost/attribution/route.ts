@@ -2,16 +2,33 @@ import { NextRequest } from "next/server";
 import { createAwsClients } from "@/lib/aws";
 import { GetCostAndUsageCommand } from "@aws-sdk/client-cost-explorer";
 import { formatISO, subDays, startOfDay } from "date-fns";
-import { CostAttribution } from "@/types/api";
+import { CostAttribution, DimensionType } from "@/types/api";
 
 export async function GET(req: NextRequest) {
   try {
     const { costExplorer } = createAwsClients();
     const sp = req.nextUrl.searchParams;
-    const dim = sp.get("dimension") || "REGION"; // REGION | INSTANCE_TYPE | LINKED_ACCOUNT | AZ | USAGE_TYPE | SERVICE | ...
+    const dim = (sp.get("dimension") || "REGION") as DimensionType;
     const days = parseInt(sp.get("days") || "7", 10);
     const end = startOfDay(new Date());
     const start = subDays(end, days);
+
+    // For research team dimensions (TEAM, PROJECT, RESEARCHER, JOB_TYPE),
+    // we need to map to AWS tags or use instance metadata
+    const isCustomDimension = [
+      "TEAM",
+      "PROJECT",
+      "RESEARCHER",
+      "JOB_TYPE",
+    ].includes(dim);
+
+    if (isCustomDimension) {
+      // Fallback to mock data for custom dimensions until tag-based grouping is implemented
+      const response = await fetch(
+        `${req.nextUrl.origin}/api/cost/attribution-mock?${sp.toString()}`
+      );
+      return Response.json(await response.json());
+    }
 
     const res = await costExplorer.send(
       new GetCostAndUsageCommand({
@@ -63,19 +80,23 @@ export async function GET(req: NextRequest) {
         end: formatISO(end, { representation: "date" }),
       },
       totalCostUsd: totalCost,
+      attributedCostUsd: accounted,
       buckets,
       unaccountedUsd,
     };
 
     return Response.json(payload);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Cost attribution API error:", error);
     return Response.json(
       {
-        error: error.name || "Unknown error",
-        message: error.message || "Failed to fetch cost attribution data",
+        error: error instanceof Error ? error.name : "Unknown error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch cost attribution data",
         details:
-          error.name === "AccessDeniedException"
+          error instanceof Error && error.name === "AccessDeniedException"
             ? "Missing Cost Explorer permissions. See README for required IAM policy."
             : undefined,
       },
