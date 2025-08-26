@@ -15,7 +15,7 @@ export default function Home() {
         <h3 style={{ marginBottom: 8 }}>Cost attribution</h3>
         <CostAttributionPanel />
       </section>
-      <section>
+      {/* <section>
         <h3 style={{ marginBottom: 8 }}>Notes</h3>
         <ul style={{ paddingLeft: 16, lineHeight: 1.6 }}>
           <li>
@@ -31,7 +31,7 @@ export default function Home() {
             Cost Explorer dimensions instead for a quick prototype.
           </li>
         </ul>
-      </section>
+      </section> */}
     </div>
   );
 }
