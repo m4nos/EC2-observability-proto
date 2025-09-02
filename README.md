@@ -8,9 +8,9 @@ This prototype provides a minimal, actionable dashboard for EC2 utilisation and 
 
 ## Demo
 
-![EC2 Demo 1](./assets/ec2-1.gif)
-![EC2 Demo 2](./assets/ec2-2.gif)
-![EC2 Demo 3](./assets/ec2-3.gif)
+![EC2 Demo 1](./public/ec2-1.gif)
+![EC2 Demo 2](./public/ec2-2.gif)
+![EC2 Demo 3](./public/ec2-3.gif)
 
 ### Run locally
 
