@@ -6,6 +6,12 @@ This prototype provides a minimal, actionable dashboard for EC2 utilisation and 
 - EC2 instance table with 24h CPU metrics and waste indicators
 - Cost attribution breakdown by Cost Explorer dimension (default: REGION)
 
+## Demo
+
+![EC2 Demo 1](./assets/ec2-1.gif)
+![EC2 Demo 2](./assets/ec2-2.gif)
+![EC2 Demo 3](./assets/ec2-3.gif)
+
 ### Run locally
 
 1. Install deps
